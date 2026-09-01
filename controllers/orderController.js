@@ -43,7 +43,7 @@ const createOrder = async (req, res) => {
         VALUES (?, ?, ?, ?)`,
         [
           orderId,
-          item.id,
+          item.product_id,
           item.quantity,
           item.price,
         ]
