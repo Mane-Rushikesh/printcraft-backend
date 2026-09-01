@@ -9,7 +9,6 @@ const createOrder = async (req, res) => {
   try {
     const { items, total_amount } = req.body;
 
-    // User ID JWT token se lenge
     const user_id = req.user.id;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -37,6 +36,17 @@ const createOrder = async (req, res) => {
 
     // Add order items
     for (const item of items) {
+
+      // Frontend se product_id ya id dono me se jo available ho use karo
+      const productId = item.product_id || item.id;
+
+      console.log("ORDER ITEM:", item);
+      console.log("PRODUCT ID:", productId);
+
+      if (!productId) {
+        throw new Error("Product ID is missing");
+      }
+
       await connection.query(
         `INSERT INTO order_items
         (order_id, product_id, quantity, price)
@@ -58,6 +68,7 @@ const createOrder = async (req, res) => {
     });
 
   } catch (error) {
+
     await connection.rollback();
 
     console.error("Create Order Error:", error);
@@ -70,7 +81,6 @@ const createOrder = async (req, res) => {
     connection.release();
   }
 };
-
 
 // ===============================
 // GET MY ORDERS
