@@ -1,5 +1,7 @@
 const db = require("../config/db");
-const { sendOrderConfirmation } = require("../config/mailer");
+const {
+  sendOrderConfirmation,
+} = require("../config/mailer");
 
 // ===============================
 // CREATE ORDER
@@ -83,9 +85,8 @@ const createOrder = async (req, res) => {
         console.log(
           `Order confirmation email sent to ${users[0].email}`
         );
-
       } catch (emailError) {
-        // Email failure should NOT cancel a successful order
+        // Email failure should not cancel the order
         console.error(
           "Order email error:",
           emailError
@@ -109,6 +110,37 @@ const createOrder = async (req, res) => {
 
   } finally {
     connection.release();
+  }
+};
+
+
+// ===============================
+// GET MY ORDERS
+// ===============================
+const getMyOrders = async (req, res) => {
+  try {
+    const user_id = req.user.id;
+
+    const [orders] = await db.query(
+      `SELECT
+        o.id,
+        o.total_amount,
+        o.status,
+        o.created_at
+       FROM orders o
+       WHERE o.user_id = ?
+       ORDER BY o.id DESC`,
+      [user_id]
+    );
+
+    res.status(200).json(orders);
+
+  } catch (error) {
+    console.error("Get My Orders Error:", error);
+
+    res.status(500).json({
+      message: "Failed to fetch orders",
+    });
   }
 };
 
@@ -200,7 +232,7 @@ const getOrderDetails = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // First get order
+    // Get order
     const [orders] = await db.query(
       `SELECT
         o.id,
@@ -221,8 +253,8 @@ const getOrderDetails = async (req, res) => {
 
     const order = orders[0];
 
-    // Admin can see any order.
-    // Customer can only see their own order.
+    // Admin can see any order
+    // Customer can only see their own order
     if (
       req.user.role !== "admin" &&
       order.user_id !== req.user.id
@@ -232,7 +264,7 @@ const getOrderDetails = async (req, res) => {
       });
     }
 
-    // Get products inside order
+    // Get order products
     const [items] = await db.query(
       `SELECT
         oi.id,
