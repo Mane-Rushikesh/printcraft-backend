@@ -1,4 +1,5 @@
 const db = require("../config/db");
+const { sendOrderConfirmation } = require("../config/mailer");
 
 // ===============================
 // CREATE ORDER
@@ -36,8 +37,6 @@ const createOrder = async (req, res) => {
 
     // Add order items
     for (const item of items) {
-
-      // Frontend se product_id ya id dono me se jo available ho use karo
       const productId = item.product_id || item.id;
 
       console.log("ORDER ITEM:", item);
@@ -62,13 +61,44 @@ const createOrder = async (req, res) => {
 
     await connection.commit();
 
+    // Get customer details
+    const [users] = await db.query(
+      `SELECT name, email
+       FROM users
+       WHERE id = ?`,
+      [user_id]
+    );
+
+    // Send confirmation email
+    if (users.length > 0 && users[0].email) {
+      try {
+        await sendOrderConfirmation({
+          to: users[0].email,
+          customerName: users[0].name,
+          orderId,
+          items,
+          totalAmount: total_amount,
+        });
+
+        console.log(
+          `Order confirmation email sent to ${users[0].email}`
+        );
+
+      } catch (emailError) {
+        // Email failure should NOT cancel a successful order
+        console.error(
+          "Order email error:",
+          emailError
+        );
+      }
+    }
+
     res.status(201).json({
       message: "Order placed successfully",
       orderId,
     });
 
   } catch (error) {
-
     await connection.rollback();
 
     console.error("Create Order Error:", error);
@@ -79,37 +109,6 @@ const createOrder = async (req, res) => {
 
   } finally {
     connection.release();
-  }
-};
-
-// ===============================
-// GET MY ORDERS
-// ===============================
-const getMyOrders = async (req, res) => {
-  try {
-    // User ID JWT token se
-    const user_id = req.user.id;
-
-    const [orders] = await db.query(
-      `SELECT
-        o.id,
-        o.total_amount,
-        o.status,
-        o.created_at
-       FROM orders o
-       WHERE o.user_id = ?
-       ORDER BY o.id DESC`,
-      [user_id]
-    );
-
-    res.status(200).json(orders);
-
-  } catch (error) {
-    console.error("Get My Orders Error:", error);
-
-    res.status(500).json({
-      message: "Failed to fetch orders",
-    });
   }
 };
 
