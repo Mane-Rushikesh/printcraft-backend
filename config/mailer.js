@@ -1,15 +1,18 @@
 const nodemailer = require("nodemailer");
+const dns = require("dns");
 
-// ======================================
-// GMAIL SMTP CONFIGURATION
-// ======================================
+// ==========================================
+// FORCE IPv4 FIRST
+// ==========================================
+dns.setDefaultResultOrder("ipv4first");
+
+// ==========================================
+// GMAIL SMTP TRANSPORTER
+// ==========================================
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
-
-  // Gmail SMTP - STARTTLS
   port: 587,
-
   secure: false,
 
   auth: {
@@ -17,18 +20,18 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASSWORD,
   },
 
-  // Connection settings
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 15000,
+  connectionTimeout: 15000,
+  greetingTimeout: 15000,
+  socketTimeout: 20000,
 
-  // Prefer IPv4
-  family: 4,
+  tls: {
+    rejectUnauthorized: true,
+  },
 });
 
-// ======================================
+// ==========================================
 // SEND ORDER CONFIRMATION EMAIL
-// ======================================
+// ==========================================
 
 const sendOrderConfirmation = async ({
   to,
@@ -38,6 +41,7 @@ const sendOrderConfirmation = async ({
   totalAmount,
 }) => {
   try {
+    // Create product rows
     const itemsHtml = items
       .map(
         (item) => `
@@ -45,6 +49,7 @@ const sendOrderConfirmation = async ({
             <td style="
               padding:12px;
               border-bottom:1px solid #eeeeee;
+              color:#333333;
             ">
               ${item.name}
             </td>
@@ -53,6 +58,7 @@ const sendOrderConfirmation = async ({
               padding:12px;
               border-bottom:1px solid #eeeeee;
               text-align:center;
+              color:#333333;
             ">
               ${item.quantity}
             </td>
@@ -61,6 +67,7 @@ const sendOrderConfirmation = async ({
               padding:12px;
               border-bottom:1px solid #eeeeee;
               text-align:right;
+              color:#333333;
             ">
               ₹${Number(item.price).toFixed(2)}
             </td>
@@ -69,10 +76,14 @@ const sendOrderConfirmation = async ({
       )
       .join("");
 
+    // ======================================
+    // EMAIL
+    // ======================================
+
     const mailOptions = {
       from: `"PrintCraft" <${process.env.EMAIL_USER}>`,
 
-      to,
+      to: to,
 
       subject: `PrintCraft - Order Confirmed #${orderId}`,
 
@@ -152,7 +163,7 @@ const sendOrderConfirmation = async ({
         line-height:1.6;
         color:#555555;
       ">
-        Hello <strong>${customerName}</strong>,
+        Hello <strong>${customerName || "Customer"}</strong>,
       </p>
 
       <p style="
@@ -165,7 +176,7 @@ const sendOrderConfirmation = async ({
       </p>
 
 
-      <!-- ORDER INFO -->
+      <!-- ORDER INFORMATION -->
 
       <div style="
         background:#f7f7f7;
@@ -180,18 +191,18 @@ const sendOrderConfirmation = async ({
         </p>
 
         <p style="margin:5px 0;">
-          <strong>Status:</strong>
+          <strong>Order Status:</strong>
           Pending
         </p>
 
       </div>
 
 
-      <!-- PRODUCTS -->
+      <!-- ORDER ITEMS -->
 
       <h3 style="
         color:#222222;
-        margin-bottom:10px;
+        margin-bottom:12px;
       ">
         Order Items
       </h3>
@@ -252,7 +263,7 @@ const sendOrderConfirmation = async ({
       ">
 
         <span style="
-          font-size:16px;
+          font-size:15px;
           color:#555555;
         ">
           Total Amount
@@ -315,6 +326,10 @@ const sendOrderConfirmation = async ({
       `,
     };
 
+    // ======================================
+    // SEND EMAIL
+    // ======================================
+
     const info = await transporter.sendMail(mailOptions);
 
     console.log(
@@ -340,9 +355,9 @@ const sendOrderConfirmation = async ({
 };
 
 
-// ======================================
+// ==========================================
 // EXPORT
-// ======================================
+// ==========================================
 
 module.exports = {
   transporter,
