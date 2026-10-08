@@ -1,10 +1,17 @@
 const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASSWORD,
+  },
+
+  tls: {
+    family: 4,
   },
 });
 
@@ -22,9 +29,11 @@ const sendOrderConfirmation = async ({
           <td style="padding:10px;border-bottom:1px solid #eee;">
             ${item.name}
           </td>
+
           <td style="padding:10px;border-bottom:1px solid #eee;text-align:center;">
             ${item.quantity}
           </td>
+
           <td style="padding:10px;border-bottom:1px solid #eee;text-align:right;">
             ₹${Number(item.price).toFixed(2)}
           </td>
@@ -36,11 +45,13 @@ const sendOrderConfirmation = async ({
   const mailOptions = {
     from: `"PrintCraft" <${process.env.EMAIL_USER}>`,
     to,
+
     subject: `PrintCraft - Order Confirmed #${orderId}`,
 
     html: `
       <!DOCTYPE html>
       <html>
+
       <body style="
         margin:0;
         padding:0;
@@ -63,7 +74,10 @@ const sendOrderConfirmation = async ({
             padding:25px;
             text-align:center;
           ">
-            <h1 style="margin:0;">PRINTCRAFT</h1>
+            <h1 style="margin:0;">
+              PRINTCRAFT
+            </h1>
+
             <p style="margin:8px 0 0;">
               Order Confirmation
             </p>
@@ -71,7 +85,9 @@ const sendOrderConfirmation = async ({
 
           <div style="padding:30px;">
 
-            <h2>Hello ${customerName},</h2>
+            <h2>
+              Hello ${customerName},
+            </h2>
 
             <p>
               Thank you for shopping with PrintCraft.
@@ -84,11 +100,20 @@ const sendOrderConfirmation = async ({
               border-radius:8px;
               margin:20px 0;
             ">
-              <strong>Order ID:</strong> #${orderId}<br>
-              <strong>Status:</strong> Pending
+
+              <strong>Order ID:</strong>
+              #${orderId}
+
+              <br />
+
+              <strong>Status:</strong>
+              Pending
+
             </div>
 
-            <h3>Order Items</h3>
+            <h3>
+              Order Items
+            </h3>
 
             <table style="
               width:100%;
@@ -97,7 +122,9 @@ const sendOrderConfirmation = async ({
             ">
 
               <thead>
+
                 <tr style="background:#f5f5f5;">
+
                   <th style="padding:10px;text-align:left;">
                     Product
                   </th>
@@ -109,7 +136,9 @@ const sendOrderConfirmation = async ({
                   <th style="padding:10px;text-align:right;">
                     Price
                   </th>
+
                 </tr>
+
               </thead>
 
               <tbody>
@@ -125,7 +154,11 @@ const sendOrderConfirmation = async ({
               text-align:right;
               font-size:20px;
             ">
-              <strong>Total: ₹${Number(totalAmount).toFixed(2)}</strong>
+
+              <strong>
+                Total: ₹${Number(totalAmount).toFixed(2)}
+              </strong>
+
             </div>
 
             <p style="margin-top:30px;">
@@ -134,7 +167,8 @@ const sendOrderConfirmation = async ({
             </p>
 
             <p>
-              Thank you for choosing <strong>PrintCraft</strong>.
+              Thank you for choosing
+              <strong>PrintCraft</strong>.
             </p>
 
           </div>
@@ -146,12 +180,15 @@ const sendOrderConfirmation = async ({
             color:#666;
             font-size:13px;
           ">
+
             © PrintCraft — Professional Printing Solutions
+
           </div>
 
         </div>
 
       </body>
+
       </html>
     `,
   };
